@@ -77,7 +77,7 @@ You will now have a host running at [localhost:8080](http://localhost:8080/)
 
 ```bash
 # Move to the right directory
-cd monolithstarter-static
+    cd monolithstarter-static
 
 # Install dependencies
 yarn install

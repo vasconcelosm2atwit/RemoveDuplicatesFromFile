@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Container } from 'reactstrap';
 import Hello from '../components/Hello';
 
+
 class HelloPage extends Component {
   render() {
     return (
