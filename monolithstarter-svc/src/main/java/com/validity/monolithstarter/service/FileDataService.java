@@ -5,7 +5,12 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 
 import com.validity.monolithstarter.domain.Person;
 
@@ -14,35 +19,115 @@ import org.springframework.stereotype.Service;
 @Service
 public class FileDataService {
     // SOLUTION FROM MICHAEL ANDERSON VASCONCELOS
-
-
-    List<Person> duplicates;
+    List<Person> duplicates = new ArrayList<>();
 
     // Reads file and filter data removing duplicates
-    public List<Person> getData() {
-        List<Person> personList = new ArrayList<Person>();
+    public Set<Person> getData() {
+        Map<Integer, String> header = new HashMap<>();
         List<Person> duplicates = new ArrayList<Person>();
+        Set<Person> personSet = new LinkedHashSet<Person>();
 
         // CHANGE FILE PATH TO RUN ON DIFFERENT MACHINE, Relative file path not working
         // on my machine.
         try (BufferedReader reader = new BufferedReader(new FileReader(
-                "C:/Users/vasconcelosm2/Desktop/simple-app-starter/monolithstarter-svc/src/main/resources/test-files/normal.csv"))) {
+                "C:/Users/vasconcelosm2/Desktop/simple-app-starter/monolithstarter-svc/src/main/resources/test-files/advanced.csv"))) {
 
             String line = "";
-            int lineCount = 0;
             // read file
+            line = reader.readLine();
+            String[] headerSplitter = line.split(",");
+            for (int i = 0; i < headerSplitter.length; i++) {
+                header.put(i, headerSplitter[i]);
+            }
+
             while ((line = reader.readLine()) != null) {
 
-                // skips first line
-                if (lineCount == 0) {
-                    lineCount++;
-                    continue;
+                Person newPerson = new Person();
+                String temp = "";
+                int pos = 0; // id, first_name, last_name, company, email, address1, address2, zip, city,
+                             // state_long, state, phone
+                boolean qtFound = false;
+                Stack<Character> qta = new Stack<Character>();
+
+                // O(n) + file size, O(n^2)
+                for (char c : line.toCharArray()) {
+                    // add characters until a coma is found, then add word to the map
+                    // if \" is found then add everything until the \" is over (Ignore comas for the
+                    // duration)
+
+                    // if "," encountered adds to object
+                    if ((!qtFound && c == ',')) {
+
+                        switch (header.get(pos)) {
+                        case "first_name":
+                            newPerson.setFirst_name(temp);
+                            break;
+                        case "last_name":
+                            newPerson.setLast_name(temp);
+                            break;
+                        case "company":
+                            newPerson.setCompany(temp);
+                            break;
+                        case "email":
+                            newPerson.setEmail(temp);
+                            break;
+                        case "address1":
+                            newPerson.setAddress1(temp);
+                            break;
+                        case "address2":
+                            newPerson.setAddress2(temp);
+                            break;
+                        case "zip":
+                            newPerson.setZip(temp);
+                            break;
+                        case "city":
+                            newPerson.setCity(temp);
+                            break;
+                        case "state_long":
+                            newPerson.setState_long(temp);
+                            break;
+                        case "state":
+                            newPerson.setState(temp);
+                            break;
+                        case "phone":
+                            newPerson.setPhone(temp);
+                            break;
+                        default:
+                            newPerson.setId(temp); // if none is found, it must be the id, therefore id is default
+                            break;
+                        }
+                        pos++; // update position
+                        temp = "";
+                        continue; // move to next iteration
+                    }
+                    // if " encountered, add to stack and ignore commas until another " is
+                    // encountered
+                    if (c == '"') {
+                        // System.out.println(qta.toString());
+                        if (!qta.empty()) {
+                            qtFound = false;
+                            qta.pop();
+                        } else {
+                            qtFound = true;
+                            qta.push(c);
+                        }
+                        continue; // move to next iteration
+                    }
+
+                    temp += c; // add characters
                 }
 
-                lineCount++;
-                String[] hold = line.split(","); // splits data
-                Person person = new Person(hold); // create new object
-                personList.add(person);
+                // if temp is not empty, its the last string, the phonenumber.
+                if (temp != "") {
+                    newPerson.setPhone(temp);
+                }
+
+                boolean notInSet = personSet.add(newPerson); // treturns true if data is not on set
+
+                if (!notInSet) {
+                    duplicates.add(newPerson); // adds to duplicates pile
+                }
+
             }
         } catch (FileNotFoundException ex) {
             System.out.println(ex);
@@ -50,46 +135,10 @@ public class FileDataService {
             System.out.println(ex);
         }
 
-        // Start Levenshtein distance
-        // This algorithm is only filtering a distance of 3, if it only requires only 3
-        // changes to become another full name(First+last)
-        for (int i = 1; i <= personList.size() - 1; i++) {
-            String name1 = personList.get(i).getFullName();
-            String name2 = personList.get(i - 1).getFullName();
-            int distance = DistanceCalculation(name1, name2); // gets Distance
-            if (distance < 4) {
-                duplicates.add(personList.get(i));
-                personList.remove(i);
-            }
-        }
-
         holdDuplicate(duplicates);
 
-        return personList;
-    }
-
-    // Levenshtein distance using Dynamic Programming
-    // Time Complexity O(M*N) worse case of Min(world1.length, world2.length)
-    public static int DistanceCalculation(String w1, String w2) {
-        int w1Size = w1.length();
-        int w2Size = w2.length();
-        int[][] dp = new int[w1Size + 1][w2Size + 1];
-        for (int i = 1; i <= w1.length(); i++) {
-            dp[i][0] = i;
-        }
-        for (int j = 1; j <= w2.length(); j++) {
-            dp[0][j] = j;
-        }
-        for (int i = 1; i <= w1Size; i++) {
-            for (int j = 1; j <= w2Size; j++) {
-                if (w1.charAt(i - 1) == w2.charAt(j - 1)) {
-                    dp[i][j] = dp[i - 1][j - 1];
-                } else {
-                    dp[i][j] = Math.min(dp[i - 1][j - 1], Math.min(dp[i - 1][j], dp[i][j - 1])) + 1;
-                }
-            }
-        }
-        return dp[w1Size][w2Size];
+        // return new ArrayList<Person>(personSet);
+        return personSet;
     }
 
     public void holdDuplicate(List<Person> list) {

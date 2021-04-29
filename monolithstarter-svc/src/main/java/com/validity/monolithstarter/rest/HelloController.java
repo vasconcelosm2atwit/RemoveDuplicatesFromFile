@@ -5,12 +5,15 @@ import com.validity.monolithstarter.service.FileDataService;
 import com.validity.monolithstarter.service.HelloService;
 
 import org.springframework.boot.configurationprocessor.json.JSONArray;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -31,19 +34,17 @@ public class HelloController {
     }
 
     @GetMapping("/data")
-    public List<Person> getData(){
-        JSONArray jsonArray = new JSONArray(fileDataService.getData());
-
+    public Set<Person> getData() {
+        // JSONArray jsonArray = new JSONArray(fileDataService.getData());
         return fileDataService.getData();
     }
 
     @GetMapping("/duplicates")
-    public List<Person> getDuplicates(){
+    public List<Person> getDuplicates() {
         fileDataService.getData();
 
-        JSONArray jsonArray = new JSONArray(fileDataService.getDuplicates());
+        // JSONArray jsonArray = new JSONArray(fileDataService.getDuplicates());
         return fileDataService.getDuplicates();
     }
-
 
 }
